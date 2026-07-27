@@ -1,62 +1,235 @@
-# Trigger relay: fires on every push to sc-paradigm1, extracts build parameters
-# from the commit message, and queues "Paradigm - Build with Source Control".
+# Full release workflow: triggered by every push to sc-paradigm1.
+#
+# 1. Build   - extracts TaskID from the commit message, queues and waits for
+#              "Paradigm - Build with Source Control" (pipeline 53).
+# 2. Gate    - Integration pre-approval  (Environment: integration-pre-approval)
+# 3. Upgrade - queues and waits for "Paradigm - Upgrade Environment" (pipeline 54)
+#              targeting the 'integration' environment.
+# 4. Gate    - Integration post-approval (Environment: integration-post-approval)
+# 5. Gate    - Production pre-approval   (Environment: production-pre-approval)
+# 6. Upgrade - queues and waits for pipeline 54 targeting 'production'.
+# 7. Gate    - Production post-approval  (Environment: production-post-approval) - finalizes.
+#
+# Each gate is a separate Azure DevOps Environment with a manual Approval check
+# configured in the ADO UI (Pipelines -> Environments). Swapping the approver
+# for any single gate never requires touching this file.
 #
 # Commit message format expected: "<version>; TaskID: <value>"
 #   e.g. "v1.0.1; TaskID: V1.0.1"
-#
-# Mapping applied:
-#   packageName (required by target pipeline) <- TaskID value from commit message
-#   tasksList   <- TaskID value from commit message
-#   buildType   -> 'Specific Tasks'
-#   tags        -> left empty
 
 trigger:
   branches:
     include:
       - main
 
-pool: NicolasHosted   # matches the pool used by build-source-control.yml; change if this repo should use a different agent pool
-
 variables:
   targetOrganization: 'https://dev.azure.com/dbmsc'
   targetProject: 'poc'
-  targetPipelineId: '53'   # Paradigm - Build with Source Control
+  buildPipelineId: '53'     # Paradigm - Build with Source Control
+  upgradePipelineId: '54'   # Paradigm - Upgrade Environment
 
-steps:
-  - checkout: self
-    fetchDepth: 1
+stages:
+  # ------------------------------------------------------------------
+  - stage: Build
+    displayName: 'Build Package from Commit'
+    jobs:
+      - job: Build
+        pool: NicolasHosted
+        steps:
+          - checkout: self
+            fetchDepth: 1
 
-  - bash: |
-      set -e
+          - bash: |
+              set -e
+              commitMessage=$(git log -1 --format='%s')
+              echo "Message: $commitMessage"
 
-      commitHash=$(git rev-parse HEAD)
-      commitMessage=$(git log -1 --format='%s')
+              # Extract the TaskID value: everything after "TaskID:" up to the next ';' or end of line
+              taskId=$(echo "$commitMessage" | sed -n 's/.*TaskID:[[:space:]]*\([^;]*\).*/\1/p' | xargs)
 
-      echo "Commit: $commitHash"
-      echo "Message: $commitMessage"
+              if [ -z "$taskId" ]; then
+                echo "##vso[task.logissue type=error]Could not find 'TaskID: <value>' in commit message: $commitMessage"
+                exit 1
+              fi
 
-      # Extract the TaskID value: everything after "TaskID:" up to the next ';' or end of line
-      taskId=$(echo "$commitMessage" | sed -n 's/.*TaskID:[[:space:]]*\([^;]*\).*/\1/p' | xargs)
+              echo "TaskID resolved: $taskId"
+              echo "##vso[task.setvariable variable=packageName;isOutput=true]$taskId"
+            name: extract
+            displayName: 'Extract parameters from commit message'
 
-      if [ -z "$taskId" ]; then
-        echo "##vso[task.logissue type=error]Could not find 'TaskID: <value>' in commit message: $commitMessage"
-        exit 1
-      fi
+          - bash: |
+              set -e
+              az extension add --name azure-devops --only-show-errors
+              echo "$SYSTEM_ACCESSTOKEN" | az devops login --organization "$(targetOrganization)"
 
-      echo "##vso[task.setvariable variable=packageName]$taskId"
-      echo "##vso[task.setvariable variable=taskId]$taskId"
-    displayName: 'Extract parameters from commit message'
+              runId=$(az pipelines run \
+                --organization "$(targetOrganization)" \
+                --project "$(targetProject)" \
+                --id "$(buildPipelineId)" \
+                --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" tags="" \
+                --query id -o tsv)
+              echo "Queued build run: $runId"
 
-  - bash: |
-      set -e
-      az extension add --name azure-devops --only-show-errors
-      echo "$SYSTEM_ACCESSTOKEN" | az devops login --organization "$(targetOrganization)"
+              while true; do
+                state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
+                [ "$state" == "completed" ] && break
+                sleep 15
+              done
 
-      az pipelines run \
-        --organization "$(targetOrganization)" \
-        --project "$(targetProject)" \
-        --id "$(targetPipelineId)" \
-        --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(taskId)"
-    displayName: 'Queue Paradigm - Build with Source Control'
-    env:
-      SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+              result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
+              echo "Build run result: $result"
+              if [ "$result" != "succeeded" ]; then
+                echo "##vso[task.logissue type=error]Build failed (result=$result). See run $runId in pipeline $(buildPipelineId)."
+                exit 1
+              fi
+            displayName: 'Queue and wait: Build with Source Control'
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  # ------------------------------------------------------------------
+  - stage: IntegrationPreApproval
+    displayName: 'Integration - Pre-Approval Gate'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: IntegrationPreApprovalGate
+        displayName: 'Await integration pre-approval'
+        environment: 'integration-pre-approval'
+        pool: NicolasHosted
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: echo "Integration pre-approval granted - proceeding to upgrade."
+                  displayName: 'Gate passed'
+
+  # ------------------------------------------------------------------
+  - stage: UpgradeIntegration
+    displayName: 'Upgrade - integration'
+    dependsOn: IntegrationPreApproval
+    condition: succeeded()
+    variables:
+      packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
+    jobs:
+      - job: UpgradeIntegration
+        pool: NicolasHosted
+        steps:
+          - bash: |
+              set -e
+              az extension add --name azure-devops --only-show-errors
+              echo "$SYSTEM_ACCESSTOKEN" | az devops login --organization "$(targetOrganization)"
+
+              runId=$(az pipelines run \
+                --organization "$(targetOrganization)" \
+                --project "$(targetProject)" \
+                --id "$(upgradePipelineId)" \
+                --parameters targetEnvironment="integration" packageNames="$(packageName)" \
+                --query id -o tsv)
+              echo "Queued upgrade run: $runId"
+
+              while true; do
+                state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
+                [ "$state" == "completed" ] && break
+                sleep 15
+              done
+
+              result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
+              echo "Upgrade run result: $result"
+              if [ "$result" != "succeeded" ]; then
+                echo "##vso[task.logissue type=error]Integration upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
+                exit 1
+              fi
+            displayName: 'Queue and wait: Upgrade Environment (integration)'
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  # ------------------------------------------------------------------
+  - stage: IntegrationPostApproval
+    displayName: 'Integration - Post-Approval Gate'
+    dependsOn: UpgradeIntegration
+    condition: succeeded()
+    jobs:
+      - deployment: IntegrationPostApprovalGate
+        displayName: 'Confirm integration upgrade'
+        environment: 'integration-post-approval'
+        pool: NicolasHosted
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: echo "Integration upgrade confirmed."
+                  displayName: 'Gate passed'
+
+  # ------------------------------------------------------------------
+  - stage: ProductionPreApproval
+    displayName: 'Production - Pre-Approval Gate'
+    dependsOn: IntegrationPostApproval
+    condition: succeeded()
+    jobs:
+      - deployment: ProductionPreApprovalGate
+        displayName: 'Await production pre-approval'
+        environment: 'production-pre-approval'
+        pool: NicolasHosted
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: echo "Production pre-approval granted - proceeding to upgrade."
+                  displayName: 'Gate passed'
+
+  # ------------------------------------------------------------------
+  - stage: UpgradeProduction
+    displayName: 'Upgrade - production'
+    dependsOn: ProductionPreApproval
+    condition: succeeded()
+    variables:
+      packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
+    jobs:
+      - job: UpgradeProduction
+        pool: NicolasHosted
+        steps:
+          - bash: |
+              set -e
+              az extension add --name azure-devops --only-show-errors
+              echo "$SYSTEM_ACCESSTOKEN" | az devops login --organization "$(targetOrganization)"
+
+              runId=$(az pipelines run \
+                --organization "$(targetOrganization)" \
+                --project "$(targetProject)" \
+                --id "$(upgradePipelineId)" \
+                --parameters targetEnvironment="production" packageNames="$(packageName)" \
+                --query id -o tsv)
+              echo "Queued upgrade run: $runId"
+
+              while true; do
+                state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
+                [ "$state" == "completed" ] && break
+                sleep 15
+              done
+
+              result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
+              echo "Upgrade run result: $result"
+              if [ "$result" != "succeeded" ]; then
+                echo "##vso[task.logissue type=error]Production upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
+                exit 1
+              fi
+            displayName: 'Queue and wait: Upgrade Environment (production)'
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+
+  # ------------------------------------------------------------------
+  - stage: ProductionPostApproval
+    displayName: 'Production - Post-Approval Gate (Finalize)'
+    dependsOn: UpgradeProduction
+    condition: succeeded()
+    jobs:
+      - deployment: ProductionPostApprovalGate
+        displayName: 'Finalize workflow'
+        environment: 'production-post-approval'
+        pool: NicolasHosted
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - bash: echo "Production upgrade confirmed. Workflow complete."
+                  displayName: 'Gate passed'
