@@ -53,6 +53,7 @@ stages:
               fi
 
               echo "TaskID resolved: $taskId"
+              echo "##vso[task.setvariable variable=packageName]$taskId"
               echo "##vso[task.setvariable variable=packageName;isOutput=true]$taskId"
             name: extract
             displayName: 'Extract parameters from commit message'
