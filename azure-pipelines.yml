@@ -67,7 +67,7 @@ stages:
                 --organization "$(targetOrganization)" \
                 --project "$(targetProject)" \
                 --id "$(buildPipelineId)" \
-                --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" tags="" \
+                --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" \
                 --query id -o tsv)
               echo "Queued build run: $runId"
 
