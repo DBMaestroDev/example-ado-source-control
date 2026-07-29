@@ -1,18 +1,37 @@
 # Full release workflow: triggered by every push to sc-paradigm1.
 #
-# 1. Build   - extracts TaskID from the commit message, queues and waits for
+# 1. Build   - extracts TaskID from the commit message, queues (fire-and-forget)
 #              "Build and Precheck Package - Source Control" (pipeline 59).
 # 2. Gate    - Integration pre-approval  (Environment: Integration-pre-approval)
-# 3. Upgrade - queues and waits for "Upgrade Environment" (pipeline 60)
+# 3. Upgrade - queues (fire-and-forget) "Upgrade Environment" (pipeline 60)
 #              targeting the 'Integration' environment.
 # 4. Gate    - Integration post-approval (Environment: Integration-post-approval)
 # 5. Gate    - Production pre-approval   (Environment: Production-pre-approval)
-# 6. Upgrade - queues and waits for pipeline 60 targeting 'Production'.
+# 6. Upgrade - queues (fire-and-forget) pipeline 60 targeting 'Production'.
 # 7. Gate    - Production post-approval  (Environment: Production-post-approval) - finalizes.
 #
 # Each gate is a separate Azure DevOps Environment with a manual Approval check
 # configured in the ADO UI (Pipelines -> Environments). Swapping the approver
 # for any single gate never requires touching this file.
+#
+# NOTE - fire-and-forget by design, not an oversight:
+# This organization has exactly 1 self-hosted parallel job and 0 granted
+# Microsoft-hosted parallel jobs (confirmed via TF/CI error when we tried
+# hosted pools). A job that queues a downstream pipeline and then polls it
+# in a loop would hold the only available slot for the entire duration,
+# so the downstream pipeline could never start - permanent deadlock.
+#
+# The fix: every "queue" step below only queues the downstream pipeline and
+# exits immediately, releasing the slot so the downstream run can actually
+# use it. There is deliberately NO automatic pass/fail check here anymore -
+# that responsibility now falls to whoever approves the NEXT gate:
+#   - Before approving, check that the pipeline just queued actually
+#     succeeded (the Runs list, or the failure-notification email already
+#     configured for pipeline 59/60).
+#   - If it failed, REJECT the gate instead of approving it, to stop the
+#     workflow here rather than letting it continue against a broken build.
+# Approval gates themselves cost nothing while pending (no agent, no slot),
+# which is what makes this safe with only one parallel job.
 #
 # Commit message format expected: "<version>; TaskID: <value>"
 #   e.g. "v1.0.1; TaskID: V1.0.1"
@@ -34,8 +53,7 @@ stages:
     displayName: 'Build Package from Commit'
     jobs:
       - job: Build
-        pool:
-          vmImage: 'ubuntu-latest'
+        pool: Default
         steps:
           - checkout: self
             fetchDepth: 1
@@ -71,20 +89,9 @@ stages:
                 --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" \
                 --query id -o tsv)
               echo "Queued build run: $runId"
-
-              while true; do
-                state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
-                [ "$state" == "completed" ] && break
-                sleep 15
-              done
-
-              result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
-              echo "Build run result: $result"
-              if [ "$result" != "succeeded" ]; then
-                echo "##vso[task.logissue type=error]Build failed (result=$result). See run $runId in pipeline $(buildPipelineId)."
-                exit 1
-              fi
-            displayName: 'Queue and wait: Build with Source Control'
+              echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
+              echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+            displayName: 'Queue: Build with Source Control (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
@@ -97,8 +104,7 @@ stages:
       - deployment: IntegrationPreApprovalGate
         displayName: 'Await Integration pre-approval'
         environment: 'Integration-pre-approval'
-        pool:
-          vmImage: 'ubuntu-latest'
+        pool: Default
         strategy:
           runOnce:
             deploy:
@@ -115,8 +121,7 @@ stages:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
     jobs:
       - job: UpgradeIntegration
-        pool:
-          vmImage: 'ubuntu-latest'
+        pool: Default
         steps:
           - bash: |
               set -e
@@ -130,20 +135,9 @@ stages:
                 --parameters targetEnvironment="Integration" packageNames="$(packageName)" \
                 --query id -o tsv)
               echo "Queued upgrade run: $runId"
-
-              while true; do
-                state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
-                [ "$state" == "completed" ] && break
-                sleep 15
-              done
-
-              result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
-              echo "Upgrade run result: $result"
-              if [ "$result" != "succeeded" ]; then
-                echo "##vso[task.logissue type=error]Integration upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
-                exit 1
-              fi
-            displayName: 'Queue and wait: Upgrade Environment (Integration)'
+              echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
+              echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+            displayName: 'Queue: Upgrade Environment - Integration (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
@@ -156,8 +150,7 @@ stages:
       - deployment: IntegrationPostApprovalGate
         displayName: 'Confirm Integration upgrade'
         environment: 'Integration-post-approval'
-        pool:
-          vmImage: 'ubuntu-latest'
+        pool: Default
         strategy:
           runOnce:
             deploy:
@@ -174,8 +167,7 @@ stages:
       - deployment: ProductionPreApprovalGate
         displayName: 'Await Production pre-approval'
         environment: 'Production-pre-approval'
-        pool:
-          vmImage: 'ubuntu-latest'
+        pool: Default
         strategy:
           runOnce:
             deploy:
@@ -192,8 +184,7 @@ stages:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
     jobs:
       - job: UpgradeProduction
-        pool:
-          vmImage: 'ubuntu-latest'
+        pool: Default
         steps:
           - bash: |
               set -e
@@ -207,20 +198,9 @@ stages:
                 --parameters targetEnvironment="Production" packageNames="$(packageName)" \
                 --query id -o tsv)
               echo "Queued upgrade run: $runId"
-
-              while true; do
-                state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
-                [ "$state" == "completed" ] && break
-                sleep 15
-              done
-
-              result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
-              echo "Upgrade run result: $result"
-              if [ "$result" != "succeeded" ]; then
-                echo "##vso[task.logissue type=error]Production upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
-                exit 1
-              fi
-            displayName: 'Queue and wait: Upgrade Environment (Production)'
+              echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
+              echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+            displayName: 'Queue: Upgrade Environment - Production (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
@@ -233,8 +213,7 @@ stages:
       - deployment: ProductionPostApprovalGate
         displayName: 'Finalize workflow'
         environment: 'Production-post-approval'
-        pool:
-          vmImage: 'ubuntu-latest'
+        pool: Default
         strategy:
           runOnce:
             deploy:
