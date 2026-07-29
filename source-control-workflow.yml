@@ -46,6 +46,7 @@ variables:
   targetProject: 'Example'
   buildPipelineId: '59'     # Build and Precheck Package - Source Control
   upgradePipelineId: '60'   # Upgrade Environment
+  downstreamRunnerPool: 'dbmaestro-linux'   # agent pool pipelines 59/60 should run on
 
 stages:
   # ------------------------------------------------------------------
@@ -86,7 +87,7 @@ stages:
                 --organization "$(targetOrganization)" \
                 --project "$(targetProject)" \
                 --id "$(buildPipelineId)" \
-                --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" \
+                --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" runnerPool="$(downstreamRunnerPool)" \
                 --query id -o tsv)
               echo "Queued build run: $runId"
               echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
@@ -150,7 +151,7 @@ stages:
                 --organization "$(targetOrganization)" \
                 --project "$(targetProject)" \
                 --id "$(upgradePipelineId)" \
-                --parameters targetEnvironment="Integration" packageNames="$(packageName)" \
+                --parameters targetEnvironment="Integration" packageNames="$(packageName)" runnerPool="$(downstreamRunnerPool)" \
                 --query id -o tsv)
               echo "Queued upgrade run: $runId"
               echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
@@ -227,7 +228,7 @@ stages:
                 --organization "$(targetOrganization)" \
                 --project "$(targetProject)" \
                 --id "$(upgradePipelineId)" \
-                --parameters targetEnvironment="Production" packageNames="$(packageName)" \
+                --parameters targetEnvironment="Production" packageNames="$(packageName)" runnerPool="$(downstreamRunnerPool)" \
                 --query id -o tsv)
               echo "Queued upgrade run: $runId"
               echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
