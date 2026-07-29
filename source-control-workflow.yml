@@ -1,13 +1,13 @@
 # Full release workflow: triggered by every push to sc-paradigm1.
 #
 # 1. Build   - extracts TaskID from the commit message, queues and waits for
-#              "Paradigm - Build with Source Control" (pipeline 53).
+#              "Build and Precheck Package - Source Control" (pipeline 59).
 # 2. Gate    - Integration pre-approval  (Environment: Integration-pre-approval)
-# 3. Upgrade - queues and waits for "Paradigm - Upgrade Environment" (pipeline 54)
+# 3. Upgrade - queues and waits for "Upgrade Environment" (pipeline 60)
 #              targeting the 'Integration' environment.
 # 4. Gate    - Integration post-approval (Environment: Integration-post-approval)
 # 5. Gate    - Production pre-approval   (Environment: Production-pre-approval)
-# 6. Upgrade - queues and waits for pipeline 54 targeting 'Production'.
+# 6. Upgrade - queues and waits for pipeline 60 targeting 'Production'.
 # 7. Gate    - Production post-approval  (Environment: Production-post-approval) - finalizes.
 #
 # Each gate is a separate Azure DevOps Environment with a manual Approval check
@@ -25,8 +25,8 @@ trigger:
 variables:
   targetOrganization: 'https://dev.azure.com/dbmsc'
   targetProject: 'Example-ADO'
-  buildPipelineId: '53'     # Paradigm - Build with Source Control
-  upgradePipelineId: '54'   # Paradigm - Upgrade Environment
+  buildPipelineId: '59'     # Build and Precheck Package - Source Control
+  upgradePipelineId: '60'   # Upgrade Environment
 
 stages:
   # ------------------------------------------------------------------
