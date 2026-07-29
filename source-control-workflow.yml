@@ -134,7 +134,9 @@ stages:
   # ------------------------------------------------------------------
   - stage: UpgradeIntegration
     displayName: 'Upgrade - Integration'
-    dependsOn: IntegrationPreApproval
+    dependsOn:
+      - IntegrationPreApproval
+      - Build   # needed so stageDependencies.Build... resolves below - execution order is unaffected, Build already runs first
     condition: succeeded()
     variables:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
@@ -211,7 +213,9 @@ stages:
   # ------------------------------------------------------------------
   - stage: UpgradeProduction
     displayName: 'Upgrade - Production'
-    dependsOn: ProductionPreApproval
+    dependsOn:
+      - ProductionPreApproval
+      - Build   # needed so stageDependencies.Build... resolves below - execution order is unaffected, Build already runs first
     condition: succeeded()
     variables:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
