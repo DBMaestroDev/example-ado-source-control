@@ -43,7 +43,7 @@ trigger:
 
 variables:
   targetOrganization: 'https://dev.azure.com/dbmsc'
-  targetProject: 'Example-ADO'
+  targetProject: 'Example'
   buildPipelineId: '59'     # Build and Precheck Package - Source Control
   upgradePipelineId: '60'   # Upgrade Environment
 
@@ -91,6 +91,24 @@ stages:
               echo "Queued build run: $runId"
               echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
               echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+
+              # --- Polling disabled - see NOTE at top of file. ---
+              # Kept here (commented out) so it's a one-line re-enable if this
+              # org ever gets a 2nd parallel job. Just uncomment and remove
+              # the two echo lines above.
+              #
+              # while true; do
+              #   state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
+              #   [ "$state" == "completed" ] && break
+              #   sleep 15
+              # done
+              #
+              # result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
+              # echo "Build run result: $result"
+              # if [ "$result" != "succeeded" ]; then
+              #   echo "##vso[task.logissue type=error]Build failed (result=$result). See run $runId in pipeline $(buildPipelineId)."
+              #   exit 1
+              # fi
             displayName: 'Queue: Build with Source Control (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
@@ -137,6 +155,20 @@ stages:
               echo "Queued upgrade run: $runId"
               echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
               echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+
+              # --- Polling disabled - see NOTE at top of file. ---
+              # while true; do
+              #   state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
+              #   [ "$state" == "completed" ] && break
+              #   sleep 15
+              # done
+              #
+              # result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
+              # echo "Upgrade run result: $result"
+              # if [ "$result" != "succeeded" ]; then
+              #   echo "##vso[task.logissue type=error]Integration upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
+              #   exit 1
+              # fi
             displayName: 'Queue: Upgrade Environment - Integration (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
@@ -200,6 +232,20 @@ stages:
               echo "Queued upgrade run: $runId"
               echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
               echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+
+              # --- Polling disabled - see NOTE at top of file. ---
+              # while true; do
+              #   state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
+              #   [ "$state" == "completed" ] && break
+              #   sleep 15
+              # done
+              #
+              # result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
+              # echo "Upgrade run result: $result"
+              # if [ "$result" != "succeeded" ]; then
+              #   echo "##vso[task.logissue type=error]Production upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
+              #   exit 1
+              # fi
             displayName: 'Queue: Upgrade Environment - Production (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
