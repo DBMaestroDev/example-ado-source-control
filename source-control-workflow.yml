@@ -2,13 +2,13 @@
 #
 # 1. Build   - extracts TaskID from the commit message, queues and waits for
 #              "Paradigm - Build with Source Control" (pipeline 53).
-# 2. Gate    - Integration pre-approval  (Environment: integration-pre-approval)
+# 2. Gate    - Integration pre-approval  (Environment: Integration-pre-approval)
 # 3. Upgrade - queues and waits for "Paradigm - Upgrade Environment" (pipeline 54)
-#              targeting the 'integration' environment.
-# 4. Gate    - Integration post-approval (Environment: integration-post-approval)
-# 5. Gate    - Production pre-approval   (Environment: production-pre-approval)
-# 6. Upgrade - queues and waits for pipeline 54 targeting 'production'.
-# 7. Gate    - Production post-approval  (Environment: production-post-approval) - finalizes.
+#              targeting the 'Integration' environment.
+# 4. Gate    - Integration post-approval (Environment: Integration-post-approval)
+# 5. Gate    - Production pre-approval   (Environment: Production-pre-approval)
+# 6. Upgrade - queues and waits for pipeline 54 targeting 'Production'.
+# 7. Gate    - Production post-approval  (Environment: Production-post-approval) - finalizes.
 #
 # Each gate is a separate Azure DevOps Environment with a manual Approval check
 # configured in the ADO UI (Pipelines -> Environments). Swapping the approver
@@ -24,7 +24,7 @@ trigger:
 
 variables:
   targetOrganization: 'https://dev.azure.com/dbmsc'
-  targetProject: 'poc'
+  targetProject: 'Example-ADO'
   buildPipelineId: '53'     # Paradigm - Build with Source Control
   upgradePipelineId: '54'   # Paradigm - Upgrade Environment
 
@@ -34,7 +34,7 @@ stages:
     displayName: 'Build Package from Commit'
     jobs:
       - job: Build
-        pool: NicolasHosted
+        pool: Default
         steps:
           - checkout: self
             fetchDepth: 1
@@ -94,9 +94,9 @@ stages:
     condition: succeeded()
     jobs:
       - deployment: IntegrationPreApprovalGate
-        displayName: 'Await integration pre-approval'
-        environment: 'integration-pre-approval'
-        pool: NicolasHosted
+        displayName: 'Await Integration pre-approval'
+        environment: 'Integration-pre-approval'
+        pool: Default
         strategy:
           runOnce:
             deploy:
@@ -106,14 +106,14 @@ stages:
 
   # ------------------------------------------------------------------
   - stage: UpgradeIntegration
-    displayName: 'Upgrade - integration'
+    displayName: 'Upgrade - Integration'
     dependsOn: IntegrationPreApproval
     condition: succeeded()
     variables:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
     jobs:
       - job: UpgradeIntegration
-        pool: NicolasHosted
+        pool: Default
         steps:
           - bash: |
               set -e
@@ -124,7 +124,7 @@ stages:
                 --organization "$(targetOrganization)" \
                 --project "$(targetProject)" \
                 --id "$(upgradePipelineId)" \
-                --parameters targetEnvironment="integration" packageNames="$(packageName)" \
+                --parameters targetEnvironment="Integration" packageNames="$(packageName)" \
                 --query id -o tsv)
               echo "Queued upgrade run: $runId"
 
@@ -140,7 +140,7 @@ stages:
                 echo "##vso[task.logissue type=error]Integration upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
                 exit 1
               fi
-            displayName: 'Queue and wait: Upgrade Environment (integration)'
+            displayName: 'Queue and wait: Upgrade Environment (Integration)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
@@ -151,9 +151,9 @@ stages:
     condition: succeeded()
     jobs:
       - deployment: IntegrationPostApprovalGate
-        displayName: 'Confirm integration upgrade'
-        environment: 'integration-post-approval'
-        pool: NicolasHosted
+        displayName: 'Confirm Integration upgrade'
+        environment: 'Integration-post-approval'
+        pool: Default
         strategy:
           runOnce:
             deploy:
@@ -168,9 +168,9 @@ stages:
     condition: succeeded()
     jobs:
       - deployment: ProductionPreApprovalGate
-        displayName: 'Await production pre-approval'
-        environment: 'production-pre-approval'
-        pool: NicolasHosted
+        displayName: 'Await Production pre-approval'
+        environment: 'Production-pre-approval'
+        pool: Default
         strategy:
           runOnce:
             deploy:
@@ -180,14 +180,14 @@ stages:
 
   # ------------------------------------------------------------------
   - stage: UpgradeProduction
-    displayName: 'Upgrade - production'
+    displayName: 'Upgrade - Production'
     dependsOn: ProductionPreApproval
     condition: succeeded()
     variables:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
     jobs:
       - job: UpgradeProduction
-        pool: NicolasHosted
+        pool: Default
         steps:
           - bash: |
               set -e
@@ -198,7 +198,7 @@ stages:
                 --organization "$(targetOrganization)" \
                 --project "$(targetProject)" \
                 --id "$(upgradePipelineId)" \
-                --parameters targetEnvironment="production" packageNames="$(packageName)" \
+                --parameters targetEnvironment="Production" packageNames="$(packageName)" \
                 --query id -o tsv)
               echo "Queued upgrade run: $runId"
 
@@ -214,7 +214,7 @@ stages:
                 echo "##vso[task.logissue type=error]Production upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
                 exit 1
               fi
-            displayName: 'Queue and wait: Upgrade Environment (production)'
+            displayName: 'Queue and wait: Upgrade Environment (Production)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
 
@@ -226,8 +226,8 @@ stages:
     jobs:
       - deployment: ProductionPostApprovalGate
         displayName: 'Finalize workflow'
-        environment: 'production-post-approval'
-        pool: NicolasHosted
+        environment: 'Production-post-approval'
+        pool: Default
         strategy:
           runOnce:
             deploy:
