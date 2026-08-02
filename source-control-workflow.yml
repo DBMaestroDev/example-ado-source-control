@@ -46,7 +46,7 @@ variables:
   targetProject: 'Example'
   buildPipelineId: '59'     # Build and Precheck Package - Source Control
   upgradePipelineId: '60'   # Upgrade Environment
-  downstreamRunnerPool: 'dbmaestro-linux'   # agent pool pipelines 59/60 should run on
+  downstreamRunnerPool: 'dbmaestro-windows'   # agent pool pipelines 59/60 should run on
 
 stages:
   # ------------------------------------------------------------------
@@ -54,7 +54,7 @@ stages:
     displayName: 'Build Package from Commit'
     jobs:
       - job: Build
-        pool: dbmaestro-linux
+        pool: dbmaestro-windows
         steps:
           - checkout: self
             fetchDepth: 1
@@ -123,7 +123,7 @@ stages:
       - deployment: IntegrationPreApprovalGate
         displayName: 'Await Integration pre-approval'
         environment: 'Integration-pre-approval'
-        pool: dbmaestro-linux
+        pool: dbmaestro-windows
         strategy:
           runOnce:
             deploy:
@@ -142,7 +142,7 @@ stages:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
     jobs:
       - job: UpgradeIntegration
-        pool: dbmaestro-linux
+        pool: dbmaestro-windows
         steps:
           - bash: |
               set -e
@@ -185,7 +185,7 @@ stages:
       - deployment: IntegrationPostApprovalGate
         displayName: 'Confirm Integration upgrade'
         environment: 'Integration-post-approval'
-        pool: dbmaestro-linux
+        pool: dbmaestro-windows
         strategy:
           runOnce:
             deploy:
@@ -202,7 +202,7 @@ stages:
       - deployment: ProductionPreApprovalGate
         displayName: 'Await Production pre-approval'
         environment: 'Production-pre-approval'
-        pool: dbmaestro-linux
+        pool: dbmaestro-windows
         strategy:
           runOnce:
             deploy:
@@ -221,7 +221,7 @@ stages:
       packageName: $[ stageDependencies.Build.Build.outputs['extract.packageName'] ]
     jobs:
       - job: UpgradeProduction
-        pool: dbmaestro-linux
+        pool: dbmaestro-windows
         steps:
           - bash: |
               set -e
@@ -264,7 +264,7 @@ stages:
       - deployment: ProductionPostApprovalGate
         displayName: 'Finalize workflow'
         environment: 'Production-post-approval'
-        pool: dbmaestro-linux
+        pool: dbmaestro-windows
         strategy:
           runOnce:
             deploy:
