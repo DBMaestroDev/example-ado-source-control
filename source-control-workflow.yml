@@ -15,9 +15,11 @@
 # for any single gate never requires touching this file.
 #
 # NOTE - Windows agents:
-# All steps use the `powershell:` task (Windows PowerShell 5.1, always present on
-# Windows agents) rather than `bash:` - Windows agents don't have bash on PATH
-# by default. Run these on the dbmaestro-windows pool.
+# All steps use the `pwsh:` task (PowerShell 7+) rather than `bash:` - Windows
+# agents don't have bash on PATH by default. `pwsh` requires PowerShell 7+ to be
+# installed on the agent (already done on the dbmaestro-windows pool); if it's
+# ever missing, switch these steps to `powershell:` instead, which uses Windows
+# PowerShell 5.1 and needs no extra install, as a fallback.
 #
 # NOTE - fire-and-forget by design, not an oversight:
 # This organization has exactly 1 self-hosted parallel job and 0 granted
@@ -64,7 +66,7 @@ stages:
           - checkout: self
             fetchDepth: 1
 
-          - powershell: |
+          - pwsh: |
               $ErrorActionPreference = "Stop"
               $commitMessage = git log -1 --format='%s'
               Write-Host "Message: $commitMessage"
@@ -87,10 +89,13 @@ stages:
             name: extract
             displayName: 'Extract parameters from commit message'
 
-          - powershell: |
+          - pwsh: |
               $ErrorActionPreference = "Stop"
               az extension add --name azure-devops --only-show-errors
-              $env:SYSTEM_ACCESSTOKEN | az devops login --organization "$(targetOrganization)"
+              # Authenticate via env var rather than piping into 'az devops login' -
+              # on Windows, 'az' is a .cmd wrapper, and piping a token into it from
+              # PowerShell unreliably loses the stdin content across that wrapper.
+              $env:AZURE_DEVOPS_EXT_PAT = $env:SYSTEM_ACCESSTOKEN
 
               $runId = az pipelines run `
                 --organization "$(targetOrganization)" `
@@ -136,7 +141,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - powershell: Write-Host "Integration pre-approval granted - proceeding to upgrade."
+                - pwsh: Write-Host "Integration pre-approval granted - proceeding to upgrade."
                   displayName: 'Gate passed'
 
   # ------------------------------------------------------------------
@@ -152,10 +157,13 @@ stages:
       - job: UpgradeIntegration
         pool: dbmaestro-windows
         steps:
-          - powershell: |
+          - pwsh: |
               $ErrorActionPreference = "Stop"
               az extension add --name azure-devops --only-show-errors
-              $env:SYSTEM_ACCESSTOKEN | az devops login --organization "$(targetOrganization)"
+              # Authenticate via env var rather than piping into 'az devops login' -
+              # on Windows, 'az' is a .cmd wrapper, and piping a token into it from
+              # PowerShell unreliably loses the stdin content across that wrapper.
+              $env:AZURE_DEVOPS_EXT_PAT = $env:SYSTEM_ACCESSTOKEN
 
               $runId = az pipelines run `
                 --organization "$(targetOrganization)" `
@@ -197,7 +205,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - powershell: Write-Host "Integration upgrade confirmed."
+                - pwsh: Write-Host "Integration upgrade confirmed."
                   displayName: 'Gate passed'
 
   # ------------------------------------------------------------------
@@ -214,7 +222,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - powershell: Write-Host "Production pre-approval granted - proceeding to upgrade."
+                - pwsh: Write-Host "Production pre-approval granted - proceeding to upgrade."
                   displayName: 'Gate passed'
 
   # ------------------------------------------------------------------
@@ -230,10 +238,13 @@ stages:
       - job: UpgradeProduction
         pool: dbmaestro-windows
         steps:
-          - powershell: |
+          - pwsh: |
               $ErrorActionPreference = "Stop"
               az extension add --name azure-devops --only-show-errors
-              $env:SYSTEM_ACCESSTOKEN | az devops login --organization "$(targetOrganization)"
+              # Authenticate via env var rather than piping into 'az devops login' -
+              # on Windows, 'az' is a .cmd wrapper, and piping a token into it from
+              # PowerShell unreliably loses the stdin content across that wrapper.
+              $env:AZURE_DEVOPS_EXT_PAT = $env:SYSTEM_ACCESSTOKEN
 
               $runId = az pipelines run `
                 --organization "$(targetOrganization)" `
@@ -275,5 +286,5 @@ stages:
           runOnce:
             deploy:
               steps:
-                - powershell: Write-Host "Production upgrade confirmed. Workflow complete."
+                - pwsh: Write-Host "Production upgrade confirmed. Workflow complete."
                   displayName: 'Gate passed'
