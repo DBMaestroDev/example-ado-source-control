@@ -1,4 +1,4 @@
-# Full release workflow: triggered by every push to sc-paradigm1.
+# Full release workflow: triggered by every push to example-ado-source-control.
 #
 # 1. Build   - extracts TaskID from the commit message, queues (fire-and-forget)
 #              "Build and Precheck Package - Source Control" (pipeline 59).
@@ -13,6 +13,11 @@
 # Each gate is a separate Azure DevOps Environment with a manual Approval check
 # configured in the ADO UI (Pipelines -> Environments). Swapping the approver
 # for any single gate never requires touching this file.
+#
+# NOTE - Windows agents:
+# All steps use the `powershell:` task (Windows PowerShell 5.1, always present on
+# Windows agents) rather than `bash:` - Windows agents don't have bash on PATH
+# by default. Run these on the dbmaestro-windows pool.
 #
 # NOTE - fire-and-forget by design, not an oversight:
 # This organization has exactly 1 self-hosted parallel job and 0 granted
@@ -59,57 +64,60 @@ stages:
           - checkout: self
             fetchDepth: 1
 
-          - bash: |
-              set -e
-              commitMessage=$(git log -1 --format='%s')
-              echo "Message: $commitMessage"
+          - powershell: |
+              $ErrorActionPreference = "Stop"
+              $commitMessage = git log -1 --format='%s'
+              Write-Host "Message: $commitMessage"
 
               # Extract the TaskID value: everything after "TaskID:" up to the next ';' or end of line
-              taskId=$(echo "$commitMessage" | sed -n 's/.*TaskID:[[:space:]]*\([^;]*\).*/\1/p' | xargs)
+              if ($commitMessage -match 'TaskID:\s*([^;]*)') {
+                $taskId = $matches[1].Trim()
+              } else {
+                $taskId = ""
+              }
 
-              if [ -z "$taskId" ]; then
-                echo "##vso[task.logissue type=error]Could not find 'TaskID: <value>' in commit message: $commitMessage"
+              if ([string]::IsNullOrWhiteSpace($taskId)) {
+                Write-Host "##vso[task.logissue type=error]Could not find 'TaskID: <value>' in commit message: $commitMessage"
                 exit 1
-              fi
+              }
 
-              echo "TaskID resolved: $taskId"
-              echo "##vso[task.setvariable variable=packageName]$taskId"
-              echo "##vso[task.setvariable variable=packageName;isOutput=true]$taskId"
+              Write-Host "TaskID resolved: $taskId"
+              Write-Host "##vso[task.setvariable variable=packageName]$taskId"
+              Write-Host "##vso[task.setvariable variable=packageName;isOutput=true]$taskId"
             name: extract
             displayName: 'Extract parameters from commit message'
 
-          - bash: |
-              set -e
+          - powershell: |
+              $ErrorActionPreference = "Stop"
               az extension add --name azure-devops --only-show-errors
-              echo "$SYSTEM_ACCESSTOKEN" | az devops login --organization "$(targetOrganization)"
+              $env:SYSTEM_ACCESSTOKEN | az devops login --organization "$(targetOrganization)"
 
-              runId=$(az pipelines run \
-                --organization "$(targetOrganization)" \
-                --project "$(targetProject)" \
-                --id "$(buildPipelineId)" \
-                --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" runnerPool="$(downstreamRunnerPool)" \
-                --query id -o tsv)
-              echo "Queued build run: $runId"
-              echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
-              echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+              $runId = az pipelines run `
+                --organization "$(targetOrganization)" `
+                --project "$(targetProject)" `
+                --id "$(buildPipelineId)" `
+                --parameters packageName="$(packageName)" buildType="Specific Tasks" tasksList="$(packageName)" runnerPool="$(downstreamRunnerPool)" `
+                --query id -o tsv
+              Write-Host "Queued build run: $runId"
+              Write-Host "Fire-and-forget: not polling for completion (see NOTE at top of file)."
+              Write-Host "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
 
               # --- Polling disabled - see NOTE at top of file. ---
               # Kept here (commented out) so it's a one-line re-enable if this
               # org ever gets a 2nd parallel job. Just uncomment and remove
-              # the two echo lines above.
+              # the Write-Host lines above (except the "Queued build run" one).
               #
-              # while true; do
-              #   state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
-              #   [ "$state" == "completed" ] && break
-              #   sleep 15
-              # done
+              # do {
+              #   $state = az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv
+              #   if ($state -ne "completed") { Start-Sleep -Seconds 15 }
+              # } while ($state -ne "completed")
               #
-              # result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
-              # echo "Build run result: $result"
-              # if [ "$result" != "succeeded" ]; then
-              #   echo "##vso[task.logissue type=error]Build failed (result=$result). See run $runId in pipeline $(buildPipelineId)."
+              # $result = az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv
+              # Write-Host "Build run result: $result"
+              # if ($result -ne "succeeded") {
+              #   Write-Host "##vso[task.logissue type=error]Build failed (result=$result). See run $runId in pipeline $(buildPipelineId)."
               #   exit 1
-              # fi
+              # }
             displayName: 'Queue: Build with Source Control (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
@@ -128,7 +136,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - bash: echo "Integration pre-approval granted - proceeding to upgrade."
+                - powershell: Write-Host "Integration pre-approval granted - proceeding to upgrade."
                   displayName: 'Gate passed'
 
   # ------------------------------------------------------------------
@@ -144,34 +152,33 @@ stages:
       - job: UpgradeIntegration
         pool: dbmaestro-windows
         steps:
-          - bash: |
-              set -e
+          - powershell: |
+              $ErrorActionPreference = "Stop"
               az extension add --name azure-devops --only-show-errors
-              echo "$SYSTEM_ACCESSTOKEN" | az devops login --organization "$(targetOrganization)"
+              $env:SYSTEM_ACCESSTOKEN | az devops login --organization "$(targetOrganization)"
 
-              runId=$(az pipelines run \
-                --organization "$(targetOrganization)" \
-                --project "$(targetProject)" \
-                --id "$(upgradePipelineId)" \
-                --parameters targetEnvironment="Integration" packageNames="$(packageName)" runnerPool="$(downstreamRunnerPool)" \
-                --query id -o tsv)
-              echo "Queued upgrade run: $runId"
-              echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
-              echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+              $runId = az pipelines run `
+                --organization "$(targetOrganization)" `
+                --project "$(targetProject)" `
+                --id "$(upgradePipelineId)" `
+                --parameters targetEnvironment="Integration" packageNames="$(packageName)" runnerPool="$(downstreamRunnerPool)" `
+                --query id -o tsv
+              Write-Host "Queued upgrade run: $runId"
+              Write-Host "Fire-and-forget: not polling for completion (see NOTE at top of file)."
+              Write-Host "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
 
               # --- Polling disabled - see NOTE at top of file. ---
-              # while true; do
-              #   state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
-              #   [ "$state" == "completed" ] && break
-              #   sleep 15
-              # done
+              # do {
+              #   $state = az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv
+              #   if ($state -ne "completed") { Start-Sleep -Seconds 15 }
+              # } while ($state -ne "completed")
               #
-              # result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
-              # echo "Upgrade run result: $result"
-              # if [ "$result" != "succeeded" ]; then
-              #   echo "##vso[task.logissue type=error]Integration upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
+              # $result = az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv
+              # Write-Host "Upgrade run result: $result"
+              # if ($result -ne "succeeded") {
+              #   Write-Host "##vso[task.logissue type=error]Integration upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
               #   exit 1
-              # fi
+              # }
             displayName: 'Queue: Upgrade Environment - Integration (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
@@ -190,7 +197,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - bash: echo "Integration upgrade confirmed."
+                - powershell: Write-Host "Integration upgrade confirmed."
                   displayName: 'Gate passed'
 
   # ------------------------------------------------------------------
@@ -207,7 +214,7 @@ stages:
           runOnce:
             deploy:
               steps:
-                - bash: echo "Production pre-approval granted - proceeding to upgrade."
+                - powershell: Write-Host "Production pre-approval granted - proceeding to upgrade."
                   displayName: 'Gate passed'
 
   # ------------------------------------------------------------------
@@ -223,34 +230,33 @@ stages:
       - job: UpgradeProduction
         pool: dbmaestro-windows
         steps:
-          - bash: |
-              set -e
+          - powershell: |
+              $ErrorActionPreference = "Stop"
               az extension add --name azure-devops --only-show-errors
-              echo "$SYSTEM_ACCESSTOKEN" | az devops login --organization "$(targetOrganization)"
+              $env:SYSTEM_ACCESSTOKEN | az devops login --organization "$(targetOrganization)"
 
-              runId=$(az pipelines run \
-                --organization "$(targetOrganization)" \
-                --project "$(targetProject)" \
-                --id "$(upgradePipelineId)" \
-                --parameters targetEnvironment="Production" packageNames="$(packageName)" runnerPool="$(downstreamRunnerPool)" \
-                --query id -o tsv)
-              echo "Queued upgrade run: $runId"
-              echo "Fire-and-forget: not polling for completion (see NOTE at top of file)."
-              echo "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
+              $runId = az pipelines run `
+                --organization "$(targetOrganization)" `
+                --project "$(targetProject)" `
+                --id "$(upgradePipelineId)" `
+                --parameters targetEnvironment="Production" packageNames="$(packageName)" runnerPool="$(downstreamRunnerPool)" `
+                --query id -o tsv
+              Write-Host "Queued upgrade run: $runId"
+              Write-Host "Fire-and-forget: not polling for completion (see NOTE at top of file)."
+              Write-Host "Before approving the next gate, confirm this run succeeded: $(targetOrganization)/$(targetProject)/_build/results?buildId=$runId"
 
               # --- Polling disabled - see NOTE at top of file. ---
-              # while true; do
-              #   state=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv)
-              #   [ "$state" == "completed" ] && break
-              #   sleep 15
-              # done
+              # do {
+              #   $state = az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query state -o tsv
+              #   if ($state -ne "completed") { Start-Sleep -Seconds 15 }
+              # } while ($state -ne "completed")
               #
-              # result=$(az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv)
-              # echo "Upgrade run result: $result"
-              # if [ "$result" != "succeeded" ]; then
-              #   echo "##vso[task.logissue type=error]Production upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
+              # $result = az pipelines runs show --organization "$(targetOrganization)" --project "$(targetProject)" --id "$runId" --query result -o tsv
+              # Write-Host "Upgrade run result: $result"
+              # if ($result -ne "succeeded") {
+              #   Write-Host "##vso[task.logissue type=error]Production upgrade failed (result=$result). See run $runId in pipeline $(upgradePipelineId)."
               #   exit 1
-              # fi
+              # }
             displayName: 'Queue: Upgrade Environment - Production (fire-and-forget)'
             env:
               SYSTEM_ACCESSTOKEN: $(System.AccessToken)
@@ -269,5 +275,5 @@ stages:
           runOnce:
             deploy:
               steps:
-                - bash: echo "Production upgrade confirmed. Workflow complete."
+                - powershell: Write-Host "Production upgrade confirmed. Workflow complete."
                   displayName: 'Gate passed'
