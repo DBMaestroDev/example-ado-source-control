@@ -16,10 +16,14 @@
 #
 # NOTE - Windows agents:
 # All steps use the `pwsh:` task (PowerShell 7+) rather than `bash:` - Windows
-# agents don't have bash on PATH by default. `pwsh` requires PowerShell 7+ to be
-# installed on the agent (already done on the dbmaestro-windows pool); if it's
-# ever missing, switch these steps to `powershell:` instead, which uses Windows
-# PowerShell 5.1 and needs no extra install, as a fallback.
+# agents don't have bash on PATH by default. PowerShell 7+ is a hard requirement
+# here, not a fallback-able one: the dbmaestro-cicd templates these pipelines
+# call (build-from-source, precheck-package, create-package, detect-packages,
+# tag-package, get-cli-jar, upgrade-environment) hardcode `pwsh: true` on their
+# Windows-path steps, so `powershell:` (Windows PowerShell 5.1) is NOT a valid
+# substitute anywhere in this workflow - install PowerShell 7+ on the agent
+# (already done on the dbmaestro-windows pool) and restart the agent service
+# after installing if it's ever missing.
 #
 # NOTE - fire-and-forget by design, not an oversight:
 # This organization has exactly 1 self-hosted parallel job and 0 granted
