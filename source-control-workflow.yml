@@ -51,6 +51,9 @@ trigger:
   branches:
     include:
       - main
+  paths:
+    exclude:
+      - ad-hoc
 
 variables:
   targetOrganization: 'https://dev.azure.com/dbmsc'
