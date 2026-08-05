@@ -1,0 +1,49 @@
+# Ad-hoc package build: triggered by pushes to this repo that touch files
+# under the 'ad-hoc/' folder.
+#
+# This file is intentionally thin. Azure DevOps requires a self-triggered
+# pipeline's YAML to live in the same repo whose pushes trigger it, so this
+# file has to exist here even though all its real logic lives in exactly one
+# place: azure-devops/templates/ad-hoc-workflow.yml in the example-ado-pipelines
+# repo, `extends:`-ed below. That template is shared by every source-control
+# repo that needs this same ad-hoc release chain - if there's more than one
+# source-control repo, each of the others gets an equally thin copy of this
+# file (same shape, its own parameter values below). Any bug fix or change to
+# the chain itself happens once, in that one template - not copy-pasted here.
+#
+# See that template for the full Build -> approvals -> upgrades chain and its
+# design notes (git-diff detection, fire-and-forget queuing, etc.)
+
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - ad-hoc/*
+
+resources:
+  repositories:
+    - repository: dbmaestro-cicd
+      type: github
+      name: DBMaestroDev/dbmaestro-cicd
+      endpoint: dbmaestro-cicd  # Replace with your GitHub service connection name if different
+      ref: refs/heads/UseSSL_False
+    - repository: adoPipelines
+      type: github
+      name: DBMaestroDev/example-ado-pipelines
+      endpoint: 'DBMaestroDev'  # must match the service connection name exactly - reuses the
+                                 # same GitHub connection used elsewhere in this org for
+                                 # example-ado-source-control; if that connection isn't scoped
+                                 # to this repo too, register a separate one and update this.
+      ref: refs/heads/main
+
+extends:
+  template: azure-devops/templates/ad-hoc-workflow.yml@adoPipelines
+  parameters:
+    packagesFolder: 'ad-hoc'
+    targetOrganization: 'https://dev.azure.com/dbmsc'
+    targetProject: 'Example'
+    adHocBuildPipelineId: '62'   # this repo's "Build with Git" pipeline
+    upgradePipelineId: '60'      # shared "Upgrade Environment" pipeline
+    runnerPool: 'dbmaestro-windows'

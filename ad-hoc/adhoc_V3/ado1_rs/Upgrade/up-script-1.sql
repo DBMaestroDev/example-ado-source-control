@@ -1,5 +1,5 @@
 -- Sample upgrade script for template-psql/VNumber/DbPrefix_rs
-CREATE TABLE sample_table_V1 (
+CREATE TABLE sample_table_V3 (
     id INT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL,
