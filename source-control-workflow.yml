@@ -44,6 +44,7 @@ extends:
   parameters:
     targetADOOrganization: 'https://dev.azure.com/dbmsc'
     targetADOProject: 'Example'
+    dBmaestroProjectName: 'Example-ADO'
     buildPipelineId: '59'    # this repo's "Build and Precheck Package - Source Control" pipeline
     upgradePipelineId: '60'  # shared "Upgrade Environment" pipeline
     runnerPool: 'dbmaestro-windows'
