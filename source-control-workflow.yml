@@ -27,6 +27,8 @@ trigger:
                    # excluded here so an ad-hoc-only commit doesn't also trigger
                    # this workflow and fail at TaskID extraction (ad-hoc commits
                    # don't follow the "<version>; TaskID: <value>" convention).
+      - /*.yml   # root-level pipeline definitions (this file, ad-hoc-workflow.yml, etc.) -
+                 # changes to the pipeline code itself shouldn't trigger a release run
 
 resources:
   repositories:
@@ -42,8 +44,9 @@ resources:
 extends:
   template: azure-devops/templates/source-control-workflow.yml@adoPipelines
   parameters:
-    targetOrganization: 'https://dev.azure.com/dbmsc'
-    targetProject: 'Example'
+    targetADOOrganization: 'https://dev.azure.com/dbmsc'
+    targetADOProject: 'Example'
+    dBmaestroProjectName: 'Example-ADO'
     buildPipelineId: '59'    # this repo's "Build and Precheck Package - Source Control" pipeline
     upgradePipelineId: '60'  # shared "Upgrade Environment" pipeline
     runnerPool: 'dbmaestro-windows'
