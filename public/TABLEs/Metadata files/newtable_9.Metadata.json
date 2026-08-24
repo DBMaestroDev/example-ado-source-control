@@ -45,6 +45,29 @@
       "kind": "r",
       "name": "newtable_9",
       "schema": "public"
+    },
+    {
+      "attcacheoff": -1,
+      "attcollation": "default",
+      "attcompression": "\u0000",
+      "attdefault": null,
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": -1,
+      "attmissingval": null,
+      "attname": "column3",
+      "attndims": 0,
+      "attnotnull": false,
+      "attnum": 3,
+      "attoptions": null,
+      "attstorage": "x",
+      "atttypid": "character varying",
+      "atttypmod": -1,
+      "kind": "r",
+      "name": "newtable_9",
+      "schema": "public"
     }
   ],
   "Constraints": [],
@@ -52,7 +75,7 @@
     {
       "access_method": "heap",
       "cluster_index": null,
-      "column_order": "column1,column2",
+      "column_order": "column1,column2,column3",
       "force_rls": false,
       "kind": "r",
       "name": "newtable_9",
