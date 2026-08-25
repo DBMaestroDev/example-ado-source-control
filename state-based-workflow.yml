@@ -18,7 +18,7 @@
 trigger:
   branches:
     include:
-      - main
+      - Example-ADO
   paths:
     exclude:
       - ad-hoc/*   # ad-hoc/ changes are handled by ad-hoc-workflow.yml instead
