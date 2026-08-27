@@ -16,6 +16,7 @@
 # notes (two independent legs, inline `java -jar -Upgrade` calls, etc.)
 
 trigger: none
+name: 'Ad-Hoc-${{ parameters.packageName }} ($(Date:yyyyMMdd)$(Rev:.r))'
 
 parameters:
   - name: packageName
