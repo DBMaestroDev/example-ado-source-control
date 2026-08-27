@@ -1,0 +1,42 @@
+# Ad-hoc package upgrade: manually triggered, given the name of an
+# already-built package to upgrade across every environment.
+#
+# This file is intentionally thin. Azure DevOps requires a self-triggered
+# pipeline's YAML to live in the same repo whose pushes trigger it - though
+# this workflow is manual-trigger only now, the same "definition lives in the
+# calling repo" split is kept so all real logic still lives in exactly one
+# place: azure-devops/templates/ad-hoc-workflow.yml in the example-ado-pipelines
+# repo, `extends:`-ed below. That template is shared by every source-control
+# repo that needs this same ad-hoc upgrade chain - if there's more than one
+# source-control repo, each of the others gets an equally thin copy of this
+# file (same shape, its own parameter values below). Any bug fix or change to
+# the chain itself happens once, in that one template - not copy-pasted here.
+#
+# See that template for the full approvals -> upgrades chain and its design
+# notes (two independent legs, inline `java -jar -Upgrade` calls, etc.)
+
+trigger: none
+name: 'Package-${{ parameters.packageName }} ($(Date:yyyyMMdd)$(Rev:.r))'
+
+parameters:
+  - name: packageName
+    displayName: 'Name of the already-built package to upgrade across all environments'
+    type: string
+
+resources:
+  repositories:
+    - repository: adoPipelines
+      type: github
+      name: DBMaestroDev/example-ado-pipelines
+      endpoint: 'DBMaestroDev'  # must match the service connection name exactly - reuses the
+                                 # same GitHub connection used elsewhere in this org for
+                                 # example-ado-source-control; if that connection isn't scoped
+                                 # to this repo too, register a separate one and update this.
+      ref: refs/heads/main
+
+extends:
+  template: azure-devops/templates/ad-hoc-workflow.yml@adoPipelines
+  parameters:
+    packageName: ${{ parameters.packageName }}
+    dBmaestroProjectName: 'Example-ADO'
+    runnerPool: 'dbmaestro-windows'
