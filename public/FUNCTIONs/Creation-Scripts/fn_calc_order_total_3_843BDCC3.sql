@@ -4,6 +4,10 @@ CREATE OR REPLACE FUNCTION public.fn_calc_order_total(p_subtotal numeric, p_disc
 AS $function$
 DECLARE
     v_after_discount NUMERIC;  -- net amount after customer discount
+    /*
+       User 2 adds a comment
+       this is another line by user2
+    */
     v_total          NUMERIC;  -- amount to be charged
 BEGIN
     /* Step 1: reduce subtotal by customer discount */
@@ -14,6 +18,7 @@ BEGIN
        Step 3: round to cents
        (block comment changed on this branch for merge testing)
        this is a new line
+       this is another line by user1
     */
     RETURN ROUND(v_total, 2);
 END;
