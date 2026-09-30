@@ -11,12 +11,13 @@ BEGIN
     -- user1: Step 2 - express delivery doubles the cost
     IF p_express THEN
         v_cost := v_cost * 2;
-/* user 2 makes a comment */
+/* user 1 says this is something else */
     END IF;
     /*
        user1: Step 3 - round to cents
        (added by user1 for merge testing)
     */
+/* and this is another thing by user1 */
     RETURN ROUND(v_cost, 2);
 END;
 $function$;
