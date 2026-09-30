@@ -13,6 +13,7 @@ BEGIN
     /*
        Step 3: round to cents
        (block comment changed on this branch for merge testing)
+       this is a new line
     */
     RETURN ROUND(v_total, 2);
 END;
