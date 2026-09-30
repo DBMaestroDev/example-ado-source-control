@@ -17,6 +17,7 @@ BEGIN
        user1: Step 3 - round to cents
        (added by user1 for merge testing)
     */
+/* and this is another thing by user1 */
     RETURN ROUND(v_cost, 2);
 END;
 $function$;
