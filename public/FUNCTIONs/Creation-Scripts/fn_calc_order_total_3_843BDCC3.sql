@@ -17,5 +17,11 @@ BEGIN
        this is another line by user1
     */
     RETURN ROUND(v_total, 2);
+    /*
+       User 1 makes a comment
+       (block comment changed on this branch for merge testing)
+       this is a new line
+       this is another line by user1
+    */
 END;
 $function$;
