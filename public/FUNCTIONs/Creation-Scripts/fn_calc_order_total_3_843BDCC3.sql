@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.fn_calc_order_total(p_subtotal numeric, p_disc
 AS $function$
 DECLARE
     v_after_discount NUMERIC;  -- net amount after customer discount
+/*merge change*/
     /*
        User 2 adds a comment
        this is another line by user2
