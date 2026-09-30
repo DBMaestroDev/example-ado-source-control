@@ -11,6 +11,7 @@ BEGIN
     -- user1: Step 2 - express delivery doubles the cost
     IF p_express THEN
         v_cost := v_cost * 2;
+/* user 2 makes a comment */
     END IF;
     /*
        user1: Step 3 - round to cents
