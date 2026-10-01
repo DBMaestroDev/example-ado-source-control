@@ -12,6 +12,7 @@ BEGIN
        User2 makes another change
        Step 1: pick the discount rate by customer tier
        standard = 0%, silver = 5%, gold = 10%
+       Omer made a change so SC will capture it
     */
     v_rate := CASE lower(p_customer_tier)
                   WHEN 'gold'   THEN 10
