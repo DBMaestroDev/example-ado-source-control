@@ -6,7 +6,8 @@ DECLARE
     v_rate     NUMERIC;  -- discount rate in percent
     v_discount NUMERIC;  -- discount amount
 BEGIN
-    /*
+    /* 
+       user1
        Step 1: pick the discount rate by customer tier
        standard = 0%, silver = 5%, gold = 10%
        user1: tier names are compared case-insensitively
