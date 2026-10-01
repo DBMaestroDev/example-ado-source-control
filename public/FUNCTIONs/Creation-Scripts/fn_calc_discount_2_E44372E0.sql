@@ -7,6 +7,7 @@ DECLARE
     v_discount NUMERIC;  -- discount amount
 BEGIN
     /*
+	   User2: Task-17
        User2: Task-13
        User2 makes another change
        Step 1: pick the discount rate by customer tier
