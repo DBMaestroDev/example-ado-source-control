@@ -7,6 +7,7 @@ DECLARE
     v_discount NUMERIC;  -- discount amount
 BEGIN
     /*
+       User2 makes another change
        Step 1: pick the discount rate by customer tier
        standard = 0%, silver = 5%, gold = 10%
     */
