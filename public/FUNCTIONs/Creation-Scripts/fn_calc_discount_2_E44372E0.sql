@@ -24,6 +24,7 @@ BEGIN
     /*
        Step 3: round to cents
        User1 makes a change
+	   User1: Task-16
     */
     RETURN ROUND(v_discount, 2);
 END;
