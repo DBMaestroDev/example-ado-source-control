@@ -7,9 +7,8 @@ DECLARE
     v_discount NUMERIC;  -- discount amount
 BEGIN
     /*
-       Commit this
        Step 1: pick the discount rate by customer tier
-       standard = 0%, silver = 5%, gold = 10%       user1: tier names are compared case-insensitively
+       standard = 0%, silver = 5%, gold = 10%
        user1: tier names are compared case-insensitively
     */
     v_rate := CASE lower(p_customer_tier)
@@ -25,7 +24,8 @@ BEGIN
 
     /*
        Step 3: round to cents
-       user2: rounding uses half-up (ROUND on numeric)
+       User1 makes a change
+       something else
     */
     RETURN ROUND(v_discount, 2);
 END;
