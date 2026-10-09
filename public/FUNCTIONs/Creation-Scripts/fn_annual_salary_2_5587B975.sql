@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.fn_annual_salary(p_monthly numeric, p_months i
  LANGUAGE plpgsql
  IMMUTABLE
 AS $function$
+-- user4 makes a comment
 BEGIN
     IF p_monthly IS NULL THEN
         RETURN NULL;
