@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION public.fn_employee_code(p_department text, p_employee
 AS $function$
 DECLARE
     v_prefix text;
+-- user3 makes a comment
 BEGIN
     IF p_employee_id IS NULL THEN
         RETURN NULL;
