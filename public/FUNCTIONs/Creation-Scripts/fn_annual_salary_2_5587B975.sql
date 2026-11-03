@@ -4,6 +4,11 @@ CREATE OR REPLACE FUNCTION public.fn_annual_salary(p_monthly numeric, p_months i
  IMMUTABLE
 AS $function$
 -- user4 makes a comment
+DECLARE
+    v_vergi_carpan        numeric := 1;
+    v_hedef_prim          numeric;
+    v_tko_kom_oran        numeric;
+    v_max_hareket_id      numeric;
 BEGIN
     IF p_monthly IS NULL THEN
         RETURN NULL;
