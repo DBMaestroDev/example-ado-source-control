@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.fn_age_years(p_birth_date date, p_as_of date D
  LANGUAGE sql
  IMMUTABLE
 AS $function$
+-- R6-A change
 -- user 3 makes another comment please!
     SELECT CASE
 -- another user3 comment task5
