@@ -9,10 +9,8 @@ DECLARE
     v_hedef_prim          numeric;
     v_tko_kom_oran        numeric;
     v_max_hareket_id      numeric;
-    v_onceki_hareket      numeric;
-    v_hareket_id          numeric;
-    v_ekbelge_no          numeric;
-    v_bolge_yetkilimi     varchar(5);
+    v_sbm_online_servis_kapat varchar(10);
+    --u dbm test
 BEGIN
     IF p_monthly IS NULL THEN
         RETURN NULL;
