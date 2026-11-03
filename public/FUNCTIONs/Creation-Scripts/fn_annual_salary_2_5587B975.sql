@@ -24,5 +24,6 @@ BEGIN
         RAISE EXCEPTION 'months must be positive: %', p_months;
     END IF;
     RETURN round(p_monthly * p_months, 2);
+    -- feature-c: comment added near RETURN (different region)
 END;
 $function$;
