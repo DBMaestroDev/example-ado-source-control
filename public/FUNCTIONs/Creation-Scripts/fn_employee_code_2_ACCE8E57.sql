@@ -17,4 +17,4 @@ BEGIN
     END IF;
     RETURN v_prefix || '-' || lpad(p_employee_id::text, 5, '0');
 END;
-$function$;
+$function$; 

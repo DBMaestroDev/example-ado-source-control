@@ -10,4 +10,4 @@ AS $function$
                 ELSE date_part('isodow', p_date) < 6
            END;
 -- R7-B change (bottom)
-$function$; 
+$function$;
