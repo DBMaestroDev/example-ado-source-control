@@ -7,6 +7,7 @@ DECLARE
     v_prefix text;
 -- user3 makes a comment
 BEGIN
+    -- R7-C change
     IF p_employee_id IS NULL THEN
         RETURN NULL;
     END IF;
