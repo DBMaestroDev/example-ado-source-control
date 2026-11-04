@@ -3,6 +3,7 @@ CREATE OR REPLACE FUNCTION public.fn_full_name(p_first text, p_last text)
  LANGUAGE sql
  IMMUTABLE
 AS $function$
+-- R7-B change
 -- R6-C change
     SELECT btrim(concat_ws(' ', nullif(btrim(p_first), ''), nullif(btrim(p_last), '')));
 $function$;
