@@ -43,6 +43,28 @@
       "kind": "r",
       "name": "sc_merge_probe",
       "schema": "public"
+    },
+    {
+      "attcollation": "default",
+      "attcompression": "\u0000",
+      "attdefault": "'new'::character varying",
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": -1,
+      "attmissingval": "new",
+      "attname": "status",
+      "attndims": 0,
+      "attnotnull": false,
+      "attnum": 3,
+      "attoptions": null,
+      "attstorage": "x",
+      "atttypid": "character varying",
+      "atttypmod": 24,
+      "kind": "r",
+      "name": "sc_merge_probe",
+      "schema": "public"
     }
   ],
   "Constraints": [
@@ -94,7 +116,7 @@
     {
       "access_method": "heap",
       "cluster_index": null,
-      "column_order": "id,note",
+      "column_order": "id,note,status",
       "force_rls": false,
       "kind": "r",
       "name": "sc_merge_probe",
