@@ -1,6 +1,7 @@
 CREATE TABLE public.sc_merge_probe (
     id integer NOT NULL,
-    note character varying(50)
+    note character varying(50),
+    created_at timestamp without time zone DEFAULT now()
 );
 
 

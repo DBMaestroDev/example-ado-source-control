@@ -43,6 +43,28 @@
       "kind": "r",
       "name": "sc_merge_probe",
       "schema": "public"
+    },
+    {
+      "attcollation": null,
+      "attcompression": "\u0000",
+      "attdefault": "now()",
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": 8,
+      "attmissingval": "2026-11-10 13:04:59.430592",
+      "attname": "created_at",
+      "attndims": 0,
+      "attnotnull": false,
+      "attnum": 3,
+      "attoptions": null,
+      "attstorage": "p",
+      "atttypid": "timestamp without time zone",
+      "atttypmod": -1,
+      "kind": "r",
+      "name": "sc_merge_probe",
+      "schema": "public"
     }
   ],
   "Constraints": [
@@ -94,7 +116,7 @@
     {
       "access_method": "heap",
       "cluster_index": null,
-      "column_order": "id,note",
+      "column_order": "id,note,created_at",
       "force_rls": false,
       "kind": "r",
       "name": "sc_merge_probe",

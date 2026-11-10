@@ -1,0 +1,138 @@
+{
+  "Column": [
+    {
+      "attcollation": null,
+      "attcompression": "\u0000",
+      "attdefault": null,
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": 4,
+      "attmissingval": null,
+      "attname": "id",
+      "attndims": 0,
+      "attnotnull": true,
+      "attnum": 1,
+      "attoptions": null,
+      "attstorage": "p",
+      "atttypid": "integer",
+      "atttypmod": -1,
+      "kind": "r",
+      "name": "customers",
+      "schema": "public"
+    },
+    {
+      "attcollation": "default",
+      "attcompression": "\u0000",
+      "attdefault": null,
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": -1,
+      "attmissingval": null,
+      "attname": "name",
+      "attndims": 0,
+      "attnotnull": true,
+      "attnum": 2,
+      "attoptions": null,
+      "attstorage": "x",
+      "atttypid": "character varying",
+      "atttypmod": 104,
+      "kind": "r",
+      "name": "customers",
+      "schema": "public"
+    },
+    {
+      "attcollation": "default",
+      "attcompression": "\u0000",
+      "attdefault": null,
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": -1,
+      "attmissingval": null,
+      "attname": "email",
+      "attndims": 0,
+      "attnotnull": false,
+      "attnum": 3,
+      "attoptions": null,
+      "attstorage": "x",
+      "atttypid": "character varying",
+      "atttypmod": 204,
+      "kind": "r",
+      "name": "customers",
+      "schema": "public"
+    }
+  ],
+  "Constraints": [
+    {
+      "check_expr": null,
+      "Columns": [
+        {
+          "attname": "id",
+          "conkey": [
+            1
+          ],
+          "conname": "customers_pkey",
+          "conrelname": "customers",
+          "schema": "public"
+        }
+      ],
+      "conbin": null,
+      "condeferrable": false,
+      "condeferred": false,
+      "conexclop": null,
+      "confdeltype": " ",
+      "conffeqop": [],
+      "confkey": null,
+      "confmatchtype": " ",
+      "confrelid": "-",
+      "confupdtype": " ",
+      "conindid": "customers_pkey",
+      "coninhcount": 0,
+      "conislocal": true,
+      "conkey": [
+        1
+      ],
+      "conname": "customers_pkey",
+      "connoinherit": true,
+      "conpfeqop": [],
+      "conppeqop": [],
+      "conrelname": "customers",
+      "contype": "p",
+      "contypid": "-",
+      "convalidated": true,
+      "kind": "r",
+      "name": "customers",
+      "ref_columns": [],
+      "ref_schema": null,
+      "schema": "public"
+    }
+  ],
+  "General": [
+    {
+      "access_method": "heap",
+      "cluster_index": null,
+      "column_order": "id,name,email",
+      "force_rls": false,
+      "kind": "r",
+      "name": "customers",
+      "of_type": null,
+      "owner": "dbmtest",
+      "persistence": "LOGGED",
+      "reloptions": null,
+      "relreplident": "d",
+      "replica_index": null,
+      "row_level_security": false,
+      "schema": "public",
+      "tablespace": null
+    }
+  ],
+  "Indexes": [],
+  "Inherites": [],
+  "Rewrite": [],
+  "Triggers": []
+}
