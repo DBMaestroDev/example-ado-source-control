@@ -1,0 +1,116 @@
+{
+  "Column": [
+    {
+      "attcollation": null,
+      "attcompression": "\u0000",
+      "attdefault": null,
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": 4,
+      "attmissingval": null,
+      "attname": "id",
+      "attndims": 0,
+      "attnotnull": true,
+      "attnum": 1,
+      "attoptions": null,
+      "attstorage": "p",
+      "atttypid": "integer",
+      "atttypmod": -1,
+      "kind": "r",
+      "name": "sc_merge_probe",
+      "schema": "public"
+    },
+    {
+      "attcollation": "default",
+      "attcompression": "\u0000",
+      "attdefault": null,
+      "attfdwoptions": null,
+      "attgenerated": "\u0000",
+      "attidentity": "\u0000",
+      "attislocal": true,
+      "attlen": -1,
+      "attmissingval": null,
+      "attname": "note",
+      "attndims": 0,
+      "attnotnull": false,
+      "attnum": 2,
+      "attoptions": null,
+      "attstorage": "x",
+      "atttypid": "character varying",
+      "atttypmod": 54,
+      "kind": "r",
+      "name": "sc_merge_probe",
+      "schema": "public"
+    }
+  ],
+  "Constraints": [
+    {
+      "check_expr": null,
+      "Columns": [
+        {
+          "attname": "id",
+          "conkey": [
+            1
+          ],
+          "conname": "sc_merge_probe_pkey",
+          "conrelname": "sc_merge_probe",
+          "schema": "public"
+        }
+      ],
+      "conbin": null,
+      "condeferrable": false,
+      "condeferred": false,
+      "conexclop": null,
+      "confdeltype": " ",
+      "conffeqop": [],
+      "confkey": null,
+      "confmatchtype": " ",
+      "confrelid": "-",
+      "confupdtype": " ",
+      "conindid": "sc_merge_probe_pkey",
+      "coninhcount": 0,
+      "conislocal": true,
+      "conkey": [
+        1
+      ],
+      "conname": "sc_merge_probe_pkey",
+      "connoinherit": true,
+      "conpfeqop": [],
+      "conppeqop": [],
+      "conrelname": "sc_merge_probe",
+      "contype": "p",
+      "contypid": "-",
+      "convalidated": true,
+      "kind": "r",
+      "name": "sc_merge_probe",
+      "ref_columns": [],
+      "ref_schema": null,
+      "schema": "public"
+    }
+  ],
+  "General": [
+    {
+      "access_method": "heap",
+      "cluster_index": null,
+      "column_order": "id,note",
+      "force_rls": false,
+      "kind": "r",
+      "name": "sc_merge_probe",
+      "of_type": null,
+      "owner": "dbmtest",
+      "persistence": "LOGGED",
+      "reloptions": null,
+      "relreplident": "d",
+      "replica_index": null,
+      "row_level_security": false,
+      "schema": "public",
+      "tablespace": null
+    }
+  ],
+  "Indexes": [],
+  "Inherites": [],
+  "Rewrite": [],
+  "Triggers": []
+}
