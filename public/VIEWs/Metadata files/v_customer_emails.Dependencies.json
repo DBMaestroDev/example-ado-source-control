@@ -1,0 +1,7 @@
+[
+  {
+    "schema": "public",
+    "name": "customers",
+    "type": "TABLE"
+  }
+]
