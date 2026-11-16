@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION public.fn_annual_salary(p_monthly numeric, p_months i
 AS $function$
 -- R6-B change
 -- user4 makes a comment
+-- user1 R8: salary rounding reviewed
 BEGIN
     IF p_monthly IS NULL THEN
         RETURN NULL;
