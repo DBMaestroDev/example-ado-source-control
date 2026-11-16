@@ -6,6 +6,7 @@ AS $function$
 -- R6-B change
 -- user4 makes a comment
 -- user1 R8: salary rounding reviewed
+-- user2 R8: negative salary check kept
 BEGIN
     IF p_monthly IS NULL THEN
         RETURN NULL;
