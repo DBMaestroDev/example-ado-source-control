@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION public.fn_annual_salary(p_monthly numeric, p_months i
 AS $function$
 -- R6-B change
 -- user4 makes a comment
+-- user2 R8: negative salary check kept
 BEGIN
     IF p_monthly IS NULL THEN
         RETURN NULL;
