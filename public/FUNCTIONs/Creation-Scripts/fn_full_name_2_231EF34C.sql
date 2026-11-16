@@ -4,5 +4,6 @@ CREATE OR REPLACE FUNCTION public.fn_full_name(p_first text, p_last text)
  IMMUTABLE
 AS $function$
 -- R6-C change
+-- user1 R8 round 2: empty names return NULL
     SELECT btrim(concat_ws(' ', nullif(btrim(p_first), ''), nullif(btrim(p_last), '')));
 $function$;
