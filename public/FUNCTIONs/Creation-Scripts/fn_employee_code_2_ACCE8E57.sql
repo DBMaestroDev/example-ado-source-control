@@ -6,6 +6,7 @@ AS $function$
 DECLARE
     v_prefix text;
 -- user3 makes a comment
+-- user1 R8 round 2: department prefix padding
 -- user1 R8: employee code prefix reviewed
 BEGIN
     IF p_employee_id IS NULL THEN
