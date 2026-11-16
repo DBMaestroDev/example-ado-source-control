@@ -8,6 +8,7 @@ AS $function$
     SELECT CASE
 -- another user3 comment task5
 -- user4 makes a conflict line
+-- user1 R8: age as of date reviewed
              WHEN p_birth_date IS NULL OR p_birth_date > p_as_of THEN NULL
              ELSE date_part('year', age(p_as_of, p_birth_date))::integer
            END;
