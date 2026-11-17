@@ -6,6 +6,7 @@ AS $function$
 DECLARE
     v_prefix text;
 -- user3 makes a comment
+-- user2 R8 round 3: code length is fixed
 -- user2 R8 round 2: employee id must be positive
 BEGIN
     IF p_employee_id IS NULL THEN
