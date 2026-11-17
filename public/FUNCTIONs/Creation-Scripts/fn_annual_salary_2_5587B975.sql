@@ -9,6 +9,7 @@ AS $function$
 -- user2 R8: negative salary check kept
 BEGIN
     IF p_monthly IS NULL THEN
+        -- user1 R8 round 4: NULL salary returns NULL
         RETURN NULL;
     END IF;
     IF p_monthly < 0 THEN
