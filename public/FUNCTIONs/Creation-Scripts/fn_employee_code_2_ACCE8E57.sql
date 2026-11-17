@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.fn_employee_code(p_department text, p_employee
  IMMUTABLE
 AS $function$
 DECLARE
+    -- user1 R8 round 4: prefix is 3 letters
     v_prefix text;
 -- user3 makes a comment
 -- user1 R8 round 2: department prefix padding
