@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.fn_age_years(p_birth_date date, p_as_of date D
  IMMUTABLE
 AS $function$
 -- R6-A change
+-- user1 R8 round 3: age uses the as-of date
 -- user 3 makes another comment please!
     SELECT CASE
 -- another user3 comment task5
