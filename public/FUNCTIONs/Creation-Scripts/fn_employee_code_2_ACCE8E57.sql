@@ -4,6 +4,7 @@ CREATE OR REPLACE FUNCTION public.fn_employee_code(p_department text, p_employee
  IMMUTABLE
 AS $function$
 DECLARE
+    -- user2 R8 round 4: id is zero padded
     v_prefix text;
 -- user3 makes a comment
 -- user2 R8 round 3: code length is fixed
