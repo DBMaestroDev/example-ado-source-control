@@ -5,6 +5,7 @@ CREATE OR REPLACE FUNCTION public.fn_employee_code(p_department text, p_employee
 AS $function$
 DECLARE
     -- user1 R8 round 4: prefix is 3 letters
+    -- user2 R8 round 4: id is zero padded
     v_prefix text;
 -- user3 makes a comment
 -- user1 R8 round 2: department prefix padding
