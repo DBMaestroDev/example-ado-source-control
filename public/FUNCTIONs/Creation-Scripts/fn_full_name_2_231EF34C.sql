@@ -8,4 +8,4 @@ AS $function$
 -- user1 R8 round 3: names are trimmed first
 -- user1 R8 round 2: empty names return NULL
     SELECT btrim(concat_ws(' ', nullif(btrim(p_first), ''), nullif(btrim(p_last), '')));
-$function$; 
+$function$;
